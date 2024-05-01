@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import time
 
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 
 bot = telebot.TeleBot("6585561489:AAHxIXhBrrckVyKGFmokcReV8ShtrneUwSk")
 ADMIN_CHAT_ID = -4148678242
@@ -13,22 +13,17 @@ operators = {
 
 NOTIFICATION_CHAT_ID = "-4148678242"
 
+
 request_chat_ids = {}
 user_last_action = {}
-
 user_last_request_time = {}
-
 REQUEST_LIMIT_INTERVAL = 5
 
 
 bot = telebot.TeleBot("6585561489:AAHxIXhBrrckVyKGFmokcReV8ShtrneUwSk")
 
-operators = {
-    "Тимур": "@tytnetmesta0",
-    "Никита": "@duvetqwe",
-    "Давид": "@DaBabyshka"
-}
 
+# Обработчик нажатия кнопки "Старт"
 @bot.message_handler(commands=['start', 'help'])
 def handle_start(message):
     try:
@@ -40,13 +35,14 @@ def handle_start(message):
     except Exception as e:
         bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
 
+
 @bot.message_handler(func=lambda message: message.text == 'Старт')
 def handle_start_button(message):
     try:
         keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
         buttons = [
             'Оформить обращение', 'Связаться с оператором', 'Оценить качество обслуживания',
-            'Получить контактные данные', 'Получить информацию о товарах'
+            'Получить контактные данные', 'Получить информацию о товарах', "Часто задаваемые вопросы"
         ]
         keyboard.add(*[types.KeyboardButton(button) for button in buttons])
 
@@ -66,7 +62,7 @@ def handle_reply_command(message):
                 original_chat_id = request_chat_ids[reply_to_message_id]['user_id']
                 bot.send_message(original_chat_id, response_text)
                 bot.send_message(message.chat.id, "Ответ отправлен пользователю.")
-                # Удаляем информацию об обращении
+
                 del request_chat_ids[reply_to_message_id]
             else:
                 bot.send_message(message.chat.id, f"Данного ID не существует {reply_to_message_id}")
@@ -80,6 +76,7 @@ def handle_reply_command(message):
 @bot.message_handler(func=lambda message: message.text == 'Оформить обращение')
 def handle_request_creation(message):
     try:
+
         user_last_action[message.chat.id] = 'Оформить обращение'
 
         hide_markup = types.ReplyKeyboardRemove()
@@ -99,7 +96,6 @@ def handle_request_creation(message):
 def handle_any_message_after_request_creation(message):
     try:
         del user_last_action[message.chat.id]
-
         back_button = types.KeyboardButton('Назад')
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         keyboard.add(back_button)
@@ -110,7 +106,6 @@ def handle_any_message_after_request_creation(message):
 @bot.callback_query_handler(func=lambda call: call.data == 'back_to_menu')
 def back_to_menu_callback(call):
     handle_start_button(call.message)
-
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def handle_back_button(message):
     if message.chat.id in user_last_action:
@@ -119,7 +114,6 @@ def handle_back_button(message):
     bot.send_message(message.chat.id, "Выберите опцию:", reply_markup=generate_main_menu())
 
 
-# Обработчик нажатия кнопки "Оценить качество обслуживания"
 @bot.message_handler(func=lambda message: message.text == 'Оценить качество обслуживания')
 def handle_rate_service(message):
     try:
@@ -131,7 +125,6 @@ def handle_rate_service(message):
     except Exception as e:
         bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
 
-# Обработчик нажатия на оценку качества обслуживания
 @bot.message_handler(func=lambda message: message.text in [str(i) for i in range(1, 11)])
 def handle_service_rating(message):
     try:
@@ -150,14 +143,13 @@ def handle_service_rating(message):
         bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
 
 
-# Обработчик нажатия на комментарий или кнопку "Назад"
 @bot.message_handler(func=lambda message: user_last_action.get(message.chat.id) and user_last_action[message.chat.id]['action'] == 'Помогли ли мы вам?')
 def handle_comment_or_back(message):
     try:
         if message.text.lower() == 'назад':
             handle_start_button(message)
         else:
-            if 'rating' in user_last_action[message.chat.id]:
+            if 'rating' in user_last_action[message.chat.id]:  # Проверяем наличие оценки в последнем действии пользователя
                 rating = user_last_action[message.chat.id]['rating']
                 comment = message.text
 
@@ -200,6 +192,7 @@ def handle_contact_info(message):
 
         keyboard.add(facebook_button, twitter_button, instagram_button, youtube_button, back_button)
 
+        # Отправляем сообщение с клавиатурой
         bot.send_message(message.chat.id, "Выберите социальную сеть для контакта:", reply_markup=keyboard)
     except Exception as e:
         bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
@@ -219,13 +212,12 @@ def generate_main_menu():
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     buttons = [
         'Оформить обращение', 'Связаться с оператором', 'Оценить качество обслуживания',
-        'Получить контактные данные', 'Получить информацию о товарах'
+        'Получить контактные данные', 'Получить информацию о товарах', "Часто задаваемые вопросы"
     ]
     keyboard.add(*[types.KeyboardButton(button) for button in buttons])
     return keyboard
 
 
-# Обработчик нажатия кнопки "Получить информацию о товарах"
 @bot.message_handler(func=lambda message: message.text == 'Получить информацию о товарах')
 def handle_product_info(message):
     try:
@@ -261,11 +253,8 @@ def handle_product_info(message):
             )
             keyboard.add(product_button)
 
-        # Добавляем кнопку "Назад" для возврата в обычное меню
         back_button = types.InlineKeyboardButton('Назад', callback_data='back_to_main_menu')
         keyboard.add(back_button)
-
-        # Отправляем сообщение с клавиатурой
         bot.send_message(message.chat.id, "Выберите тариф интернета:", reply_markup=keyboard)
     except Exception as e:
         bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
@@ -284,7 +273,6 @@ def handle_product_selection(call):
         back_button = types.InlineKeyboardButton('Назад', callback_data='back_to_product_list')
         keyboard = types.InlineKeyboardMarkup().add(manager_button, back_button)
 
-        # Отправляем сообщение с полной информацией о товаре и кнопками
         if product_name == 'Тариф 1':
             bot.send_message(call.message.chat.id, "Информация о Тарифе 1:\n"
                                                    "Цена: 300 руб./месяц\n"
@@ -316,7 +304,6 @@ def handle_product_selection(call):
                                                    "Описание: Тариф 6 предоставляет скорость интернета 300 мбит/с и безлимитный турбо трафик. Подходит для требовательных задач и высокоскоростного потокового видео.",
                              reply_markup=keyboard)
 
-        # Удаляем предыдущее сообщение и кнопки
         if call.message:
             bot.delete_message(call.message.chat.id, call.message.message_id)
     except Exception as e:
@@ -347,6 +334,28 @@ def back_to_product_list_callback(call):
                               text="Выберите тариф интернета:", reply_markup=keyboard)
     except Exception as e:
         print(f"Произошла ошибка: {e}")
+
+@bot.message_handler(func=lambda message: message.text == 'Часто задаваемые вопросы')
+def handle_faq(message):
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    questions = ['Где вас искать?', 'Какие сроки установки?', 'На сколько заключается договор?']
+    for question in questions:
+        keyboard.add(types.KeyboardButton(question))
+    keyboard.add(types.KeyboardButton('Назад'))
+    bot.send_message(message.chat.id, "Выберите вопрос:", reply_markup=keyboard)
+
+@bot.message_handler(func=lambda message: message.text in ['Где вас искать?', 'Какие сроки установки?', 'На сколько заключается договор?'])
+def handle_faq_questions(message):
+    responses = {
+        'Где вас искать?': 'Нас можно найти тут: Профсоюзная улица, дом 123, квартира 45, 117647, Москва.',
+        'Какие сроки установки?': 'Сроки установки варируются от 7-14 дней. Взависимости от вашего места проживания.',
+        'На сколько заключается договор?': 'Договор со всеми заключается лично, поэтому определённых сроков нет.'
+    }
+    response = responses.get(message.text, 'Информация по вашему вопросу отсутствует.')
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add(types.KeyboardButton('Назад'))
+    bot.send_message(message.chat.id, response, reply_markup=keyboard)
+
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'back_to_main_menu')
